@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="VendorPay">
+<title>VendorPay</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#f5f4f0;
+  --surface:#ffffff;
+  --surface2:#f0efe9;
+  --border:#e2e0d8;
+  --accent:#1a1a2e;
+  --gold:#c9a84c;
+  --gold-light:#f0d98a;
+  --text:#1a1a2e;
+  --muted:#8a8878;
+  --success:#2d7a4f;
+  --success-bg:#edf7f1;
+  --danger:#c0392b;
+  --danger-bg:#fdf0ee;
+  --warning:#b8860b;
+  --warning-bg:#fef9e7;
+  --radius:14px;
+  --shadow:0 2px 12px rgba(26,26,46,0.08);
+}
+html{height:100%;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100%;
+  padding-bottom:120px;
+}
+
+/* ── TOP BAR ── */
+.topbar{
+  background:var(--accent);
+  color:#fff;
+  padding:16px 20px 14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+}
+.topbar-title{font-size:1.1rem;font-weight:700;letter-spacing:-0.02em;}
+.topbar-title span{color:var(--gold);}
+.topbar-badge{
+  background:var(--gold);
+  color:var(--accent);
+  font-size:0.7rem;
+  font-weight:700;
+  padding:3px 10px;
+  border-radius:20px;
+  letter-spacing:0.05em;
+}
+
+/* ── MAIN CONTENT ── */
+.content{padding:16px;}
+
+/* ── CARDS ── */
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:18px;
+  margin-bottom:12px;
+  box-shadow:var(--shadow);
+}
+.card-title{
+  font-size:0.65rem;
+  font-weight:700;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:0.12em;
+  margin-bottom:14px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.card-title::before{
+  content:'';
+  width:3px;height:14px;
+  background:var(--gold);
+  border-radius:2px;
+}
+
+/* ── FILE UPLOAD ── */
+.upload-zone{
+  border:2px dashed var(--border);
+  border-radius:10px;
+  padding:28px 20px;
+  text-align:center;
+  cursor:pointer;
+  transition:all 0.2s;
+  position:relative;
+  background:var(--surface2);
+}
+.upload-zone:active{border-color:var(--gold);background:#fdf8ec;}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.upload-zone .uicon{font-size:2.2rem;margin-bottom:8px;}
+.upload-zone strong{font-size:0.95rem;display:block;margin-bottom:4px;}
+.upload-zone small{color:var(--muted);font-size:0.8rem;}
+
+.file-badge{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 14px;
+  background:var(--success-bg);
+  border:1px solid rgba(45,122,79,0.2);
+  border-radius:10px;
+}
+.file-badge .dot{width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0;}
+.file-badge .fname{flex:1;font-size:0.82rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.file-badge .stats{font-size:0.72rem;color:var(--success);font-weight:600;}
+.file-badge button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:2px 6px;border-radius:6px;}
+.file-badge button:active{background:var(--danger-bg);color:var(--danger);}
+
+/* ── FORM ── */
+.field{margin-bottom:14px;}
+.field:last-child{margin-bottom:0;}
+label{
+  display:block;
+  font-size:0.7rem;
+  font-weight:700;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:0.1em;
+  margin-bottom:6px;
+}
+input[type=text],input[type=number]{
+  width:100%;
+  background:var(--surface2);
+  border:1.5px solid var(--border);
+  border-radius:10px;
+  padding:13px 14px;
+  color:var(--text);
+  font-family:inherit;
+  font-size:1rem;
+  outline:none;
+  transition:border-color 0.15s,box-shadow 0.15s;
+  -webkit-appearance:none;
+}
+input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,0.15);}
+input:disabled{opacity:0.45;cursor:not-allowed;}
+input[readonly]{background:var(--surface2);color:var(--accent);font-weight:600;border-color:var(--border);}
+
+/* ── VENDOR INFO BOX ── */
+.vinfo{
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:14px;
+  margin-top:10px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+.vinfo-item .lbl{font-size:0.63rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;font-weight:600;margin-bottom:3px;}
+.vinfo-item .val{font-size:1.05rem;font-weight:700;color:var(--accent);}
+.vinfo-item .val.green{color:var(--success);}
+
+/* ── ALERT BANNERS ── */
+.alert{
+  border-radius:10px;
+  padding:12px 14px;
+  font-size:0.85rem;
+  margin-top:10px;
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+}
+.alert-warn{background:var(--warning-bg);border:1px solid rgba(184,134,11,0.25);color:var(--warning);}
+.alert-err{background:var(--danger-bg);border:1px solid rgba(192,57,43,0.2);color:var(--danger);}
+.alert-ok{background:var(--success-bg);border:1px solid rgba(45,122,79,0.2);color:var(--success);}
+.alert-icon{font-size:1rem;flex-shrink:0;margin-top:1px;}
+.alert-body{}
+.alert-body strong{display:block;margin-bottom:2px;}
+.alert-body small{font-size:0.78rem;opacity:0.85;}
+
+/* ── BUTTONS ── */
+.btn{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:10px;
+  font-family:inherit;
+  font-weight:700;
+  font-size:0.95rem;
+  cursor:pointer;
+  transition:all 0.15s;
+  -webkit-appearance:none;
+}
+.btn:active{transform:scale(0.98);}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:active{background:#2d2d4e;}
+.btn-primary:disabled{opacity:0.35;cursor:not-allowed;}
+.btn-gold{background:var(--gold);color:var(--accent);}
+.btn-gold:active{background:#b8962e;}
+.btn-outline{background:transparent;color:var(--text);border:1.5px solid var(--border);}
+.btn-outline:active{background:var(--surface2);}
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-sm{padding:8px 14px;font-size:0.82rem;width:auto;}
+
+/* ── EDIT MODE ── */
+.edit-mode-bar{
+  background:var(--warning-bg);
+  border:1px solid rgba(184,134,11,0.3);
+  border-radius:10px;
+  padding:10px 14px;
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:14px;
+  font-size:0.82rem;
+  font-weight:600;
+  color:var(--warning);
+}
+
+/* ── RECENT PAYMENTS ── */
+.recent-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:12px;
+}
+.recent-title{
+  font-size:0.65rem;font-weight:700;
+  color:var(--muted);text-transform:uppercase;letter-spacing:0.12em;
+  display:flex;align-items:center;gap:8px;
+}
+.recent-title::before{content:'';width:3px;height:14px;background:var(--gold);border-radius:2px;}
+.count-pill{
+  background:var(--accent);color:#fff;
+  font-size:0.7rem;font-weight:700;
+  padding:3px 10px;border-radius:20px;
+}
+
+.payment-item{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 0;
+  border-bottom:1px solid var(--border);
+}
+.payment-item:last-child{border-bottom:none;}
+.pi-avatar{
+  width:36px;height:36px;border-radius:10px;
+  background:var(--accent);
+  color:var(--gold);
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.75rem;font-weight:800;
+  flex-shrink:0;
+  letter-spacing:-0.02em;
+}
+.pi-info{flex:1;min-width:0;}
+.pi-name{font-size:0.88rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pi-sub{font-size:0.72rem;color:var(--muted);margin-top:1px;}
+.pi-amount{text-align:right;flex-shrink:0;}
+.pi-amt-val{font-size:0.95rem;font-weight:800;color:var(--success);}
+.pi-amt-label{font-size:0.65rem;color:var(--muted);}
+.pi-edit-btn{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:8px;padding:6px 10px;
+  font-size:0.72rem;font-weight:700;
+  color:var(--muted);cursor:pointer;
+  flex-shrink:0;
+}
+.pi-edit-btn:active{background:var(--warning-bg);color:var(--warning);border-color:var(--warning);}
+
+.empty-state{
+  text-align:center;padding:24px 0;color:var(--muted);
+  font-size:0.85rem;
+}
+.empty-state .eicon{font-size:2rem;margin-bottom:8px;}
+
+/* ── BOTTOM SAVE BAR ── */
+.save-bar{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  padding:12px 16px;
+  padding-bottom:calc(12px + env(safe-area-inset-bottom));
+  display:flex;gap:10px;
+  z-index:100;
+  box-shadow:0 -4px 20px rgba(26,26,46,0.08);
+}
+.save-bar-info{
+  flex:1;
+  display:flex;flex-direction:column;justify-content:center;
+}
+.save-bar-info .sbi-count{font-size:1rem;font-weight:800;color:var(--accent);}
+.save-bar-info .sbi-label{font-size:0.7rem;color:var(--muted);}
+.save-bar-btns{display:flex;gap:8px;}
+.save-bar .btn{width:auto;padding:10px 16px;font-size:0.82rem;}
+
+/* ── MODAL ── */
+.modal-overlay{
+  position:fixed;inset:0;
+  background:rgba(26,26,46,0.6);
+  z-index:200;
+  display:flex;align-items:flex-end;
+  backdrop-filter:blur(4px);
+  animation:fadeOverlay 0.2s ease;
+}
+@keyframes fadeOverlay{from{opacity:0;}to{opacity:1;}}
+.modal{
+  background:var(--surface);
+  border-radius:20px 20px 0 0;
+  width:100%;
+  padding:20px;
+  padding-bottom:calc(20px + env(safe-area-inset-bottom));
+  animation:slideUp 0.25s ease;
+  max-height:85vh;
+  overflow-y:auto;
+}
+@keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px;}
+.modal-title{font-size:1.1rem;font-weight:800;margin-bottom:4px;}
+.modal-sub{font-size:0.82rem;color:var(--muted);margin-bottom:18px;}
+
+/* ── PDF PREVIEW (print) ── */
+@media print{
+  body > *:not(#printArea){display:none!important;}
+  #printArea{display:block!important;}
+  #printArea{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    padding:30px;color:#000;
+  }
+  .print-header{border-bottom:2px solid #1a1a2e;padding-bottom:14px;margin-bottom:20px;}
+  .print-header h1{font-size:1.4rem;font-weight:800;color:#1a1a2e;}
+  .print-header p{font-size:0.8rem;color:#666;margin-top:4px;}
+  .print-table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+  .print-table th{background:#1a1a2e;color:#fff;padding:10px 12px;text-align:left;font-weight:700;}
+  .print-table td{padding:9px 12px;border-bottom:1px solid #e0e0e0;}
+  .print-table tr:nth-child(even) td{background:#f9f9f9;}
+  .print-table .amt{font-weight:700;color:#2d7a4f;}
+  .print-footer{margin-top:20px;font-size:0.75rem;color:#999;border-top:1px solid #eee;padding-top:12px;}
+}
+#printArea{display:none;}
+
+.hidden{display:none!important;}
+.fade-in{animation:fadeIn 0.2s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+
+<!-- PRINT AREA -->
+<div id="printArea"></div>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-title">Vendor<span>Pay</span></div>
+  <div class="topbar-badge" id="topBadge">No File</div>
+</div>
+
+<div class="content">
+
+  <!-- STEP 1: File -->
+  <div class="card" id="step1Card">
+    <div class="card-title">Load Excel File</div>
+    <div class="upload-zone" id="uploadZone">
+      <input type="file" id="fileInput" accept=".xlsx,.xls">
+      <div class="uicon">&#128194;</div>
+      <strong>Tap to choose Excel file</strong>
+      <small>Supports .xlsx and .xls</small>
+    </div>
+    <div class="file-badge hidden" id="fileBadge">
+      <div class="dot"></div>
+      <span class="fname" id="fileName"></span>
+      <span class="stats" id="fileStats"></span>
+      <button onclick="clearFile()">&#x2715;</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: Entry -->
+  <div class="card" id="step2Card">
+    <div class="card-title">Payment Entry</div>
+
+    <div id="editModeBar" class="edit-mode-bar hidden">
+      <span>&#9998; Editing existing entry</span>
+      <button class="btn btn-sm btn-outline" onclick="cancelEdit()">Cancel</button>
+    </div>
+
+    <div class="field">
+      <label>Vendor Number</label>
+      <input type="text" id="vendorNum" placeholder="Enter vendor number..." oninput="lookupVendor()" disabled>
+    </div>
+
+    <div id="vendorError" class="alert alert-err hidden">
+      <span class="alert-icon">&#9888;</span>
+      <div class="alert-body"><strong>Not Found</strong><small>No vendor with this number in the file.</small></div>
+    </div>
+
+    <div id="alreadyPaid" class="alert alert-warn hidden">
+      <span class="alert-icon">&#9888;</span>
+      <div class="alert-body">
+        <strong>Payment already recorded</strong>
+        <small id="alreadyPaidDetail">Tap Edit below to modify it.</small>
+      </div>
+    </div>
+
+    <div id="vendorInfo" class="hidden fade-in">
+      <div class="field">
+        <label>Vendor Name</label>
+        <input type="text" id="vendorName" readonly>
+      </div>
+      <div class="vinfo">
+        <div class="vinfo-item">
+          <div class="lbl">Closing Balance</div>
+          <div class="val" id="closingBal">-</div>
+        </div>
+        <div class="vinfo-item">
+          <div class="lbl">Opening Balance</div>
+          <div class="val" id="openingBal">-</div>
+        </div>
+        <div class="vinfo-item">
+          <div class="lbl">Purchase</div>
+          <div class="val" id="purchaseVal">-</div>
+        </div>
+        <div class="vinfo-item">
+          <div class="lbl">Deduction</div>
+          <div class="val" id="deductionVal">-</div>
+        </div>
+      </div>
+
+      <div id="paymentSection" class="hidden fade-in" style="margin-top:14px;">
+        <div class="field">
+          <label>Amount Paid (Rs.)</label>
+          <input type="number" id="amountPaid" placeholder="0.00" min="0" step="0.01" oninput="onAmountInput()">
+        </div>
+        <div id="amountError" class="alert alert-err hidden" style="margin-bottom:10px;">
+          <span class="alert-icon">&#9888;</span>
+          <div class="alert-body"><strong>Invalid amount</strong></div>
+        </div>
+        <button class="btn btn-primary" id="recordBtn" onclick="recordPayment()" disabled>Record Payment</button>
+      </div>
+
+      <div id="alreadyPaidActions" class="hidden" style="margin-top:12px;">
+        <button class="btn btn-gold" onclick="enableEdit()">&#9998; &nbsp;Edit This Payment</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECENT PAYMENTS -->
+  <div class="card" id="recentCard">
+    <div class="recent-header">
+      <div class="recent-title">Recent Payments</div>
+      <div class="count-pill" id="countPill">0</div>
+    </div>
+    <div id="recentList">
+      <div class="empty-state">
+        <div class="eicon">&#128203;</div>
+        <p>No payments recorded yet</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM SAVE BAR -->
+<div class="save-bar" id="saveBar">
+  <div class="save-bar-info">
+    <div class="sbi-count" id="saveCount">0 entries</div>
+    <div class="sbi-label">pending to save</div>
+  </div>
+  <div class="save-bar-btns">
+    <button class="btn btn-outline" onclick="savePDF()" id="pdfBtn" disabled>&#128196; PDF</button>
+    <button class="btn btn-primary" onclick="saveExcel()" id="xlsBtn" disabled>&#128190; Save Excel</button>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay hidden" id="editModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="editModalTitle">Edit Payment</div>
+    <div class="modal-sub" id="editModalSub"></div>
+    <div class="field">
+      <label>Amount Paid (Rs.)</label>
+      <input type="number" id="editAmount" placeholder="0.00" min="0" step="0.01">
+    </div>
+    <button class="btn btn-primary" onclick="saveEdit()" style="margin-bottom:10px;">Save Changes</button>
+    <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+  </div>
+</div>
+
+<script>
+var workbook=null, sheetData=[], currentFile=null;
+var payments={}; // key: vendorNum, value: {name, amount, row, closingBal, ts}
+var currentRow=-1, editingVendor=null, isEditMode=false;
+
+// ── FILE LOAD ──
+document.getElementById('fileInput').addEventListener('change',function(e){loadFile(e.target.files[0]);});
+
+function loadFile(file){
+  if(!file)return;
+  currentFile=file;
+  var r=new FileReader();
+  r.onload=function(e){
+    workbook=XLSX.read(e.target.result,{type:'array'});
+    var sheet=workbook.Sheets[workbook.SheetNames[0]];
+    sheetData=XLSX.utils.sheet_to_json(sheet,{header:1,defval:''});
+    var rows=(sheetData.length-1);
+    document.getElementById('uploadZone').classList.add('hidden');
+    document.getElementById('fileBadge').classList.remove('hidden');
+    document.getElementById('fileName').textContent=file.name;
+    document.getElementById('fileStats').textContent=rows+' vendors';
+    document.getElementById('topBadge').textContent=rows+' vendors';
+    document.getElementById('vendorNum').disabled=false;
+    document.getElementById('vendorNum').focus();
+  };
+  r.readAsArrayBuffer(file);
+}
+
+function clearFile(){
+  if(Object.keys(payments).length>0){
+    if(!confirm('Unsaved payments will be lost. Continue?'))return;
+  }
+  workbook=null;sheetData=[];currentFile=null;payments={};currentRow=-1;
+  document.getElementById('uploadZone').classList.remove('hidden');
+  document.getElementById('fileBadge').classList.add('hidden');
+  document.getElementById('vendorNum').value='';
+  document.getElementById('vendorNum').disabled=true;
+  document.getElementById('vendorInfo').classList.add('hidden');
+  document.getElementById('vendorError').classList.add('hidden');
+  document.getElementById('alreadyPaid').classList.add('hidden');
+  document.getElementById('topBadge').textContent='No File';
+  updateSaveBar();
+  renderRecent();
+}
+
+// ── VENDOR LOOKUP ──
+function lookupVendor(){
+  var num=document.getElementById('vendorNum').value.trim();
+  var numLower=num.toLowerCase();
+  document.getElementById('vendorError').classList.add('hidden');
+  document.getElementById('alreadyPaid').classList.add('hidden');
+  document.getElementById('vendorInfo').classList.add('hidden');
+  document.getElementById('paymentSection').classList.add('hidden');
+  document.getElementById('alreadyPaidActions').classList.add('hidden');
+  document.getElementById('editModeBar').classList.add('hidden');
+  isEditMode=false;
+  currentRow=-1;
+
+  if(!num)return;
+
+  for(var i=1;i<sheetData.length;i++){
+    if(String(sheetData[i][0]).trim().toLowerCase()===numLower){
+      currentRow=i;
+      var row=sheetData[i];
+      document.getElementById('vendorName').value=row[1]||'';
+      document.getElementById('openingBal').textContent=fmtAmt(row[2]);
+      document.getElementById('purchaseVal').textContent=fmtAmt(row[3]);
+      document.getElementById('deductionVal').textContent=fmtAmt(row[4]);
+      document.getElementById('closingBal').textContent=fmtAmt(row[5]);
+      document.getElementById('vendorInfo').classList.remove('hidden');
+
+      // Check if already paid
+      if(payments[num]){
+        var p=payments[num];
+        document.getElementById('alreadyPaid').classList.remove('hidden');
+        document.getElementById('alreadyPaidDetail').textContent='Rs.'+fmtNum(p.amount)+' recorded at '+p.ts+'. Tap Edit to modify.';
+        document.getElementById('alreadyPaidActions').classList.remove('hidden');
+      } else {
+        document.getElementById('paymentSection').classList.remove('hidden');
+        document.getElementById('amountPaid').value='';
+        document.getElementById('recordBtn').disabled=true;
+        document.getElementById('amountPaid').focus();
+      }
+      return;
+    }
+  }
+  document.getElementById('vendorError').classList.remove('hidden');
+}
+
+function fmtAmt(v){
+  if(v===''||v===undefined||v===null)return '-';
+  var n=Number(v);
+  if(isNaN(n))return String(v);
+  return 'Rs.'+fmtNum(n);
+}
+
+function fmtNum(n){
+  return Number(n).toLocaleString('en-IN',{minimumFractionDigits:0,maximumFractionDigits:2});
+}
+
+// ── AMOUNT INPUT ──
+function onAmountInput(){
+  var val=parseFloat(document.getElementById('amountPaid').value);
+  document.getElementById('recordBtn').disabled=!(val>0);
+  document.getElementById('amountError').classList.add('hidden');
+}
+
+// ── RECORD PAYMENT ──
+function recordPayment(){
+  var amount=parseFloat(document.getElementById('amountPaid').value);
+  if(!amount||amount<=0){document.getElementById('amountError').classList.remove('hidden');return;}
+  var num=document.getElementById('vendorNum').value.trim();
+  var name=document.getElementById('vendorName').value;
+  var now=new Date();
+  var ts=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+
+  payments[num]={name:name,amount:amount,row:currentRow,ts:ts,closingBal:document.getElementById('closingBal').textContent};
+
+  // Clear form for next entry
+  document.getElementById('vendorNum').value='';
+  document.getElementById('vendorInfo').classList.add('hidden');
+  document.getElementById('paymentSection').classList.add('hidden');
+  document.getElementById('amountPaid').value='';
+  document.getElementById('recordBtn').disabled=true;
+  currentRow=-1;
+
+  renderRecent();
+  updateSaveBar();
+  document.getElementById('vendorNum').focus();
+
+  // Quick success flash
+  showToast('Payment recorded for '+name);
+}
+
+// ── EDIT ──
+function enableEdit(){
+  var num=document.getElementById('vendorNum').value.trim();
+  editingVendor=num;
+  var p=payments[num];
+  document.getElementById('editModalTitle').textContent='Edit: '+p.name;
+  document.getElementById('editModalSub').textContent='Vendor #'+num+' | Current: Rs.'+fmtNum(p.amount);
+  document.getElementById('editAmount').value=p.amount;
+  document.getElementById('editModal').classList.remove('hidden');
+}
+
+function saveEdit(){
+  var amount=parseFloat(document.getElementById('editAmount').value);
+  if(!amount||amount<=0){alert('Enter a valid amount.');return;}
+  var p=payments[editingVendor];
+  p.amount=amount;
+  var now=new Date();
+  p.ts=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0')+' (edited)';
+  closeModal();
+
+  // Refresh display
+  lookupVendor();
+  renderRecent();
+  updateSaveBar();
+  showToast('Payment updated');
+}
+
+function cancelEdit(){
+  isEditMode=false;
+  document.getElementById('editModeBar').classList.add('hidden');
+}
+
+function closeModal(){
+  document.getElementById('editModal').classList.add('hidden');
+  editingVendor=null;
+}
+
+document.getElementById('editModal').addEventListener('click',function(e){
+  if(e.target===this)closeModal();
+});
+
+// ── EDIT FROM RECENT LIST ──
+function editFromList(num){
+  var p=payments[num];
+  if(!p)return;
+  editingVendor=num;
+  document.getElementById('editModalTitle').textContent='Edit: '+p.name;
+  document.getElementById('editModalSub').textContent='Vendor #'+num+' | Current: Rs.'+fmtNum(p.amount);
+  document.getElementById('editAmount').value=p.amount;
+  document.getElementById('editModal').classList.remove('hidden');
+}
+
+// ── RENDER RECENT ──
+function renderRecent(){
+  var keys=Object.keys(payments);
+  document.getElementById('countPill').textContent=keys.length;
+  var el=document.getElementById('recentList');
+  if(keys.length===0){
+    el.innerHTML='<div class="empty-state"><div class="eicon">&#128203;</div><p>No payments recorded yet</p></div>';
+    return;
+  }
+  var html='';
+  // Most recent first
+  var sorted=keys.slice().reverse();
+  sorted.forEach(function(num){
+    var p=payments[num];
+    var initials=p.name.trim().split(' ').slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase()||'V';
+    html+='<div class="payment-item">';
+    html+='<div class="pi-avatar">'+initials+'</div>';
+    html+='<div class="pi-info"><div class="pi-name">'+esc(p.name)+'</div><div class="pi-sub">#'+esc(num)+' &bull; '+p.ts+'</div></div>';
+    html+='<div class="pi-amount"><div class="pi-amt-val">Rs.'+fmtNum(p.amount)+'</div><div class="pi-amt-label">paid</div></div>';
+    html+='<button class="pi-edit-btn" onclick="editFromList(\''+esc(num)+'\')">Edit</button>';
+    html+='</div>';
+  });
+  el.innerHTML=html;
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+// ── SAVE BAR ──
+function updateSaveBar(){
+  var c=Object.keys(payments).length;
+  document.getElementById('saveCount').textContent=c+' entr'+(c===1?'y':'ies');
+  document.getElementById('pdfBtn').disabled=c===0;
+  document.getElementById('xlsBtn').disabled=c===0||!workbook;
+}
+
+// ── SAVE EXCEL ──
+function saveExcel(){
+  if(!workbook||Object.keys(payments).length===0){alert('No payments to save.');return;}
+  // Apply all payments to sheetData
+  Object.keys(payments).forEach(function(num){
+    var p=payments[num];
+    sheetData[p.row][6]=p.amount;
+  });
+  var sheetName=workbook.SheetNames[0];
+  workbook.Sheets[sheetName]=XLSX.utils.aoa_to_sheet(sheetData);
+  var wbOut=XLSX.write(workbook,{bookType:'xlsx',type:'array'});
+  var blob=new Blob([wbOut],{type:'application/octet-stream'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;
+  var fname=currentFile?currentFile.name.replace(/\.xlsx?$/i,''):'payments';
+  a.download=fname+'_updated.xlsx';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Excel file saved with '+Object.keys(payments).length+' payments');
+}
+
+// ── SAVE PDF ──
+function savePDF(){
+  if(Object.keys(payments).length===0){alert('No payments to export.');return;}
+  var now=new Date();
+  var dateStr=now.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  var keys=Object.keys(payments);
+  var total=keys.reduce(function(s,k){return s+payments[k].amount;},0);
+
+  var rows='';
+  keys.forEach(function(num,i){
+    var p=payments[num];
+    rows+='<tr><td>'+(i+1)+'</td><td>'+esc(num)+'</td><td>'+esc(p.name)+'</td><td>'+p.closingBal+'</td><td class="amt">Rs.'+fmtNum(p.amount)+'</td><td>'+p.ts+'</td></tr>';
+  });
+
+  document.getElementById('printArea').innerHTML=
+    '<div class="print-header">'+
+    '<h1>Vendor Payment Report</h1>'+
+    '<p>Generated: '+dateStr+' &nbsp;|&nbsp; File: '+(currentFile?currentFile.name:'-')+'</p>'+
+    '</div>'+
+    '<table class="print-table">'+
+    '<thead><tr><th>#</th><th>Vendor No.</th><th>Vendor Name</th><th>Closing Balance</th><th>Amount Paid</th><th>Time</th></tr></thead>'+
+    '<tbody>'+rows+'</tbody>'+
+    '<tfoot><tr><td colspan="4" style="text-align:right;font-weight:700;padding:10px 12px;">Total Paid</td><td class="amt" style="padding:10px 12px;font-weight:800;">Rs.'+fmtNum(total)+'</td><td></td></tr></tfoot>'+
+    '</table>'+
+    '<div class="print-footer">Total vendors paid: '+keys.length+' &nbsp;|&nbsp; Total amount: Rs.'+fmtNum(total)+'</div>';
+
+  window.print();
+}
+
+// ── TOAST ──
+var toastTimer=null;
+function showToast(msg){
+  var t=document.getElementById('toast');
+  if(!t){
+    t=document.createElement('div');
+    t.id='toast';
+    t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:10px 20px;border-radius:20px;font-size:0.82rem;font-weight:600;z-index:300;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.25);transition:opacity 0.3s;';
+    document.body.appendChild(t);
+  }
+  t.textContent=msg;
+  t.style.opacity='1';
+  if(toastTimer)clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){t.style.opacity='0';},2200);
+}
+
+updateSaveBar();
+renderRecent();
+</script>
+</body>
+</html>
